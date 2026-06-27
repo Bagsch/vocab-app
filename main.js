@@ -633,7 +633,7 @@ function showFeedback(id, msg, type) {
   setTimeout(() => el.classList.remove('visible'), 3000);
 }
 
-window.switchView = switchView;
+console.log('geladen');
 
 // ══════════════════════════════════════════════
 //  INIT
