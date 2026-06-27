@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EspañolFlow – Spanisch lernen</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="azulejo-bg"></div>
+  <div id="app">
+
+    <nav>
+      <div class="nav-logo">Español<span>Flow</span></div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="switchView('dashboard')">Übersicht</button>
+        <button class="nav-tab" onclick="switchView('learn')">Lernen</button>
+        <button class="nav-tab" onclick="switchView('vocab')">Vokabeln</button>
+        <button class="nav-tab" onclick="switchView('import')">Hinzufügen</button>
+      </div>
+    </nav>
+
+    <!-- ─── DASHBOARD ─── -->
+    <div id="view-dashboard" class="view active">
+      <div class="dashboard-header">
+        <h1>Hola,<br><em>¡a aprender!</em></h1>
+        <p id="dash-subtitle">Deine tägliche Spanisch-Session wartet.</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="val" id="stat-total">0</div>
+          <div class="lbl">Karten gesamt</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="stat-due">0</div>
+          <div class="lbl">Fällig heute</div>
+        </div>
+        <div class="stat-card">
+          <div class="val" id="stat-streak">0</div>
+          <div class="lbl">Tage Streak</div>
+        </div>
+      </div>
+
+      <div class="session-card">
+        <h2>Heutige Session <span class="due-count" id="dash-due-badge">0</span></h2>
+        <p>Tagesziel: 10 Vokabeln – lerne so lange du möchtest.</p>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="dash-level-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="dash-level-label">0 % gelernt</div>
+        <button class="btn btn-primary" style="margin-top:16px;" onclick="switchView('learn')">
+          ▶ Session starten
+        </button>
+      </div>
+
+      <div style="padding: 16px 0 8px;">
+        <div style="font-size:0.78rem;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">
+          Letzte 7 Tage
+        </div>
+        <div class="streak-row" id="streak-row"></div>
+      </div>
+    </div>
+
+    <!-- ─── LEARN ─── -->
+    <div id="view-learn" class="view">
+      <div id="learn-content">
+        <div class="learn-header">
+          <button class="btn btn-ghost" style="width:auto;padding:9px 14px;font-size:0.8rem;" onclick="switchView('dashboard')">← Zurück</button>
+          <div class="learn-progress">
+            <div class="progress-bar-wrap" style="margin:0;">
+              <div class="progress-bar-fill" id="learn-progress-bar" style="width:0%"></div>
+            </div>
+            <div class="progress-label" id="learn-progress-label">0 / 0</div>
+          </div>
+          <div class="daily-goal" id="daily-goal-counter">0 / 10</div>
+        </div>
+
+        <div class="card-scene" id="card-scene" onclick="flipCard()">
+          <div class="card-inner" id="card-inner">
+            <div class="card-face card-front">
+              <div class="card-tag" id="card-tag">Spanisch</div>
+              <div class="card-word" id="card-es">—</div>
+              <div class="card-hint" id="card-hint"></div>
+              <div class="card-tap-hint">Tippe zum Umdrehen</div>
+            </div>
+            <div class="card-face card-back">
+              <div class="card-tag" id="card-tag-back" style="background:rgba(200,146,58,0.15);">Deutsch</div>
+              <div class="card-translation" id="card-de">—</div>
+              <div class="card-context" id="card-context"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rating-section" id="rating-section">
+          <div class="rating-label">Wie gut wusstest du es?</div>
+          <div class="rating-buttons">
+            <button class="rating-btn r-again" onclick="rateCard(0)">
+              Nochmal
+              <span class="next-review" id="next-again">1 min</span>
+            </button>
+            <button class="rating-btn r-hard" onclick="rateCard(1)">
+              Schwer
+              <span class="next-review" id="next-hard">—</span>
+            </button>
+            <button class="rating-btn r-good" onclick="rateCard(2)">
+              Gut
+              <span class="next-review" id="next-good">—</span>
+            </button>
+            <button class="rating-btn r-easy" onclick="rateCard(3)">
+              Leicht
+              <span class="next-review" id="next-easy">—</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="completion-screen" class="completion-screen" style="display:none;">
+        <div class="completion-icon">🎉</div>
+        <h2>Session abgeschlossen!</h2>
+        <p>Großartig! Dein Spanisch wird jeden Tag besser.</p>
+        <div class="completion-stats">
+          <div class="c-stat">
+            <div class="val" id="comp-reviewed">0</div>
+            <div class="lbl">Karten gelernt</div>
+          </div>
+          <div class="c-stat">
+            <div class="val" id="comp-correct">0%</div>
+            <div class="lbl">Korrekt</div>
+          </div>
+          <div class="c-stat">
+            <div class="val" id="comp-time">0</div>
+            <div class="lbl" id="comp-time-label">Heute gesamt</div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="switchView('dashboard')">Zur Übersicht</button>
+        <button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="restartSession()">Weiter lernen →</button>
+      </div>
+    </div>
+
+    <!-- ─── VOCAB ─── -->
+    <div id="view-vocab" class="view">
+      <div style="margin-bottom:20px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;">Vokabeln</h2>
+        <p style="color:var(--text-light);font-size:0.85rem;margin-top:4px;">
+          <span id="vocab-count">0</span> Karten · Punkte zeigen deinen Lernfortschritt
+        </p>
+      </div>
+      <div class="vocab-controls">
+        <input class="search-input" type="text" placeholder="Suchen..." id="vocab-search" oninput="renderVocab()">
+        <button class="btn btn-ghost" style="width:auto;" onclick="sortVocab()">↕ Sortieren</button>
+      </div>
+      <div class="vocab-list" id="vocab-list"></div>
+    </div>
+
+    <!-- ─── IMPORT ─── -->
+    <div id="view-import" class="view">
+      <div style="margin-bottom:20px;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;">Wörter hinzufügen</h2>
+        <p style="color:var(--text-light);font-size:0.85rem;margin-top:4px;">Einzeln oder als Liste importieren</p>
+      </div>
+
+      <!-- Single word -->
+      <div class="import-section">
+        <h3>Einzelnes Wort</h3>
+        <p>Trage ein Wort auf Spanisch und die deutsche Übersetzung ein.</p>
+        <div style="display:grid;gap:12px;margin-bottom:12px;">
+          <div>
+            <label>Spanisch</label>
+            <input type="text" id="single-es" placeholder="z. B. hablar" />
+          </div>
+          <div>
+            <label>Deutsch</label>
+            <input type="text" id="single-de" placeholder="z. B. sprechen" />
+          </div>
+          <div>
+            <label>Kontext (optional)</label>
+            <input type="text" id="single-ctx" placeholder="z. B. Verb · Infinitiv" />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addSingleWord()">Hinzufügen</button>
+        <div class="feedback-msg" id="single-feedback"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- CSV import -->
+      <div class="import-section">
+        <h3>Liste importieren (CSV)</h3>
+        <p>Format: <code>Spanisch, Deutsch</code> – eine Zeile pro Karte.<br>
+        Für Konjugationen: <code>habla, er/sie spricht, Verb · Präsens 3. Sg.</code></p>
+        <div style="margin-bottom:12px;">
+          <label>CSV-Inhalt einfügen</label>
+          <textarea id="csv-input" rows="8"
+            placeholder="hablar, sprechen
+  habla, er/sie spricht, Verb · Präsens 3. Sg.
+  hablé, ich sprach, Verb · Pretérito indefinido 1. Sg.
+  casa, das Haus
+  gracias, danke"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="importCSV()">Importieren</button>
+        <div class="feedback-msg" id="csv-feedback"></div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Demo data -->
+      <div class="import-section">
+        <h3>Demo-Daten laden</h3>
+        <p>Lade eine kleine Starter-Liste zum Ausprobieren.</p>
+        <button class="btn btn-ghost" style="width:100%;" onclick="loadDemoData()">Demo-Vokabeln laden</button>
+      </div>
+
+      <hr class="divider">
+      <div style="margin-top:4px;">
+        <button class="btn btn-ghost" style="width:100%;color:#fca5a5;border-color:rgba(252,165,165,0.2);" onclick="clearAllData()">
+          Alle Daten löschen
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="main.js"/>
+</body>
+</html>
