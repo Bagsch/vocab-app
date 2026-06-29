@@ -1,0 +1,20 @@
+{
+  "name": "EspañolFlow - Spanisch lernen",
+  "short_name": "EspañolFlow",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1923",
+  "theme_color": "#c8923a",
+  "icons": [
+    {
+      "src": "/favicons/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicons/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
