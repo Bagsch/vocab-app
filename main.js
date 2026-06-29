@@ -88,7 +88,13 @@ function sm2(progress, quality) {
   progress.repetitions = repetitions;
   progress.easeFactor = Math.round(easeFactor * 1000) / 1000;
   progress.lastReviewed = Date.now();
-  progress.nextReview = Date.now() + interval * 86400000;
+
+  const next = new Date();
+  next.setHours(0, 0, 0, 0);      // Heute 00:00 Uhr
+  next.setDate(next.getDate() + interval);
+
+  progress.nextReview = next.getTime();
+
   progress.totalReviews = (progress.totalReviews || 0) + 1;
   progress.correctReviews =
     (progress.correctReviews || 0) + (grade >= 3 ? 1 : 0);
@@ -99,7 +105,12 @@ function sm2(progress, quality) {
 function isDue(card, direction) {
   const p = card.progress?.[direction];
   if (!p) return false;
-  return !p.nextReview || Date.now() >= p.nextReview;
+  if (!p.nextReview) return true;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today.getTime() >= p.nextReview;
 }
 
 function getDueCards() {
@@ -130,8 +141,7 @@ function intervalLabel(quality, card, direction) {
 
   sm2(copy, quality);
 
-  const diff = copy.nextReview - Date.now();
-  const days = Math.round(diff / 86400000);
+  const days = copy.interval;
 
   if (days <= 1) return '1 Tag';
   if (days < 30) return days + ' Tage';
@@ -519,11 +529,11 @@ function nextReviewStr(card, direction) {
   const p = card.progress?.[direction];
   if (!p || !p.nextReview) return 'Neu';
 
-  const diff = p.nextReview - Date.now();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  if (diff < 0) return 'Fällig';
-
-  const days = Math.ceil(diff / 86400000);
+  const diff = p.nextReview - today.getTime();
+  const days = Math.round(diff / 86400000);
 
   if (days < 1) return 'Heute';
   if (days === 1) return 'Morgen';
@@ -694,8 +704,6 @@ function showFeedback(id, msg, type) {
   el.className = 'feedback-msg ' + type + ' visible';
   setTimeout(() => el.classList.remove('visible'), 3000);
 }
-
-console.log('geladen');
 
 // ══════════════════════════════════════════════
 //  INIT
