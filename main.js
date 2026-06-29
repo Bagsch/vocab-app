@@ -34,18 +34,47 @@ function sm2(progress, quality) {
 
   const grade = [0, 3, 4, 5][quality];
 
-  if (grade < 3) {
+  switch (quality) {
+
+  case 0: // Nochmal
     repetitions = 0;
     interval = 1;
-  } else {
+    break;
+
+  case 1: // Schwer
     if (repetitions === 0)
-      interval = 1;
+        interval = 1;
     else if (repetitions === 1)
-      interval = 6;
+        interval = 3;
     else
-      interval = Math.round(interval * easeFactor);
+        interval = Math.round(interval * 1.2);
 
     repetitions++;
+    easeFactor = Math.max(1.3, easeFactor - 0.15);
+    break;
+
+  case 2: // Gut
+    if (repetitions === 0)
+        interval = 1;
+    else if (repetitions === 1)
+        interval = 6;
+    else
+        interval = Math.round(interval * easeFactor);
+
+    repetitions++;
+    break;
+
+  case 3: // Leicht
+    if (repetitions === 0)
+        interval = 3;
+    else if (repetitions === 1)
+        interval = 7;
+    else
+        interval = Math.round(interval * (easeFactor + 0.3));
+
+    repetitions++;
+    easeFactor += 0.15;
+    break;
   }
 
   easeFactor =
