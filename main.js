@@ -125,7 +125,7 @@ function switchView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
-  const order = ['dashboard', 'learn', 'vocab', 'import'];
+  const order = ['dashboard', 'vocab', 'import'];
   const tabs = document.querySelectorAll('.nav-tab');
   const idx = order.indexOf(name);
   if (tabs[idx]) tabs[idx].classList.add('active');
@@ -174,17 +174,23 @@ function renderDashboard() {
 
 function getStreak() {
   if (!state.studyDays?.length) return 0;
-  const sorted = [...state.studyDays].sort().reverse();
+
+  const studySet = new Set(state.studyDays);
+
   let streak = 0;
-  let check  = todayISO();
-  for (const day of sorted) {
-    if (day === check) {
+  let d = new Date();
+
+  while (true) {
+    const iso = d.toISOString().split('T')[0];
+
+    if (studySet.has(iso)) {
       streak++;
-      const d = new Date(check);
       d.setDate(d.getDate() - 1);
-      check = d.toISOString().split('T')[0];
-    } else if (day < check) break;
+    } else {
+      break;
+    }
   }
+
   return streak;
 }
 
@@ -330,7 +336,14 @@ function rateCard(quality) {
   state.todayCount[iso] = (state.todayCount[iso] || 0) + 1;
 
   if (!state.studyDays) state.studyDays = [];
-  if (!state.studyDays.includes(iso)) state.studyDays.push(iso);
+
+  // Erst zur Streak zählen, wenn Tagesziel erreicht
+  if (
+    state.todayCount[iso] >= DAILY_GOAL &&
+    !state.studyDays.includes(iso)
+  ) {
+    state.studyDays.push(iso);
+  }
 
   saveData(state);
 
@@ -567,36 +580,56 @@ function addCard(es, de, ctx) {
 
 function loadDemoData() {
   const demo = [
-    ['hablar','sprechen','Verb · Infinitiv'],
-    ['hablo','ich spreche','Verb · Präsens 1. Sg.'],
-    ['hablas','du sprichst','Verb · Präsens 2. Sg.'],
-    ['habla','er/sie spricht','Verb · Präsens 3. Sg.'],
-    ['hablamos','wir sprechen','Verb · Präsens 1. Pl.'],
-    ['hablé','ich sprach','Verb · Indefinido 1. Sg.'],
-    ['habló','er/sie sprach','Verb · Indefinido 3. Sg.'],
-    ['hablaré','ich werde sprechen','Verb · Futuro 1. Sg.'],
-    ['hablaba','ich sprach (früher)','Verb · Imperfecto 1. Sg.'],
-    ['he hablado','ich habe gesprochen','Verb · Perfecto 1. Sg.'],
-    ['casa','das Haus','Substantiv'],
-    ['coche','das Auto','Substantiv'],
-    ['libro','das Buch','Substantiv'],
-    ['agua','das Wasser','Substantiv'],
-    ['ciudad','die Stadt','Substantiv'],
-    ['grande','groß','Adjektiv'],
-    ['pequeño','klein','Adjektiv'],
-    ['nuevo','neu','Adjektiv'],
-    ['bueno','gut','Adjektiv'],
-    ['malo','schlecht','Adjektiv'],
-    ['gracias','danke','Ausdruck'],
-    ['por favor','bitte','Ausdruck'],
-    ['buenos días','guten Morgen','Ausdruck'],
-    ['¿cómo estás?','wie geht es dir?','Ausdruck'],
-    ['me llamo','ich heiße','Ausdruck'],
-    ['comer','essen','Verb · Infinitiv'],
-    ['como','ich esse','Verb · Präsens 1. Sg.'],
-    ['comes','du isst','Verb · Präsens 2. Sg.'],
-    ['vivir','leben / wohnen','Verb · Infinitiv'],
-    ['vivo','ich lebe','Verb · Präsens 1. Sg.'],
+    ['hola', 'hallo'],
+    ['adiós', 'tschüss / auf Wiedersehen'],
+    ['por favor', 'bitte'],
+    ['gracias', 'danke'],
+    ['sí', 'ja'],
+    ['no', 'nein'],
+    ['buenos días', 'guten Morgen'],
+    ['buenas tardes', 'guten Tag (nachmittags)'],
+    ['buenas noches', 'gute Nacht'],
+    ['¿cómo estás?', 'wie geht es dir?'],
+    ['bien', 'gut'],
+    ['mal', 'schlecht'],
+    ['¿cómo te llamas?', 'wie heißt du?'],
+    ['me llamo', 'ich heiße'],
+    ['mucho gusto', 'freut mich (kennenzulernen)'],
+    ['amigo / amiga', 'Freund / Freundin'],
+    ['la familia', 'die Familie'],
+    ['el padre', 'der Vater'],
+    ['la madre', 'die Mutter'],
+    ['el hermano', 'der Bruder'],
+    ['la hermana', 'die Schwester'],
+    ['el agua', 'das Wasser'],
+    ['la comida', 'das Essen / die Speise'],
+    ['el pan', 'das Brot'],
+    ['la casa', 'das Haus'],
+    ['el coche', 'das Auto'],
+    ['la escuela', 'die Schule'],
+    ['el libro', 'das Buch'],
+    ['el tiempo', 'die Zeit / das Wetter'],
+    ['hoy', 'heute'],
+    ['mañana', 'morgen'],
+    ['ayer', 'gestern'],
+    ['el dinero', 'das Geld'],
+    ['comprar', 'kaufen'],
+    ['comer', 'essen'],
+    ['beber', 'trinken'],
+    ['hablar', 'sprechen'],
+    ['escribir', 'schreiben'],
+    ['leer', 'lesen'],
+    ['hacer', 'machen / tun'],
+    ['ir', 'gehen'],
+    ['querer', 'wollen / lieben'],
+    ['donde', 'wo'],
+    ['cuando', 'wann'],
+    ['por qué', 'warum'],
+    ['qué', 'was'],
+    ['quién', 'wer'],
+    ['grande', 'groß'],
+    ['pequeño', 'klein'],
+    ['bonito', 'schön']
   ];
   demo.forEach(([es, de, ctx]) => addCard(es, de, ctx));
   showFeedback('csv-feedback', demo.length + ' Demo-Karten geladen!', 'success');
