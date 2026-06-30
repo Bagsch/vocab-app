@@ -580,6 +580,21 @@ function importCSV() {
   renderDashboard();
 }
 
+async function exportVocabs() {
+  try {
+    const csv = state.cards
+      .map(card => [card.es, card.de, card.ctx || ""].join(","))
+      .join("\n");
+
+    await navigator.clipboard.writeText(csv);
+
+    showFeedback('csv-feedback', `${state.cards.length} Vokabeln wurden als CSV in die Zwischenablage kopiert.`, 'success');
+  } catch (err) {
+    console.error(err);
+    showFeedback('csv-feedback', "Konnte nicht in die Zwischenablage kopieren.", 'error');
+  }
+}
+
 function addCard(es, de, ctx) {
   if (state.cards.find(c => c.es.toLowerCase() === es.toLowerCase())) return;
 
