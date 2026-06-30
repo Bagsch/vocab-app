@@ -588,10 +588,10 @@ async function exportVocabs() {
 
     await navigator.clipboard.writeText(csv);
 
-    showFeedback('csv-feedback', `${state.cards.length} Vokabeln wurden als CSV in die Zwischenablage kopiert.`, 'success');
+    showFeedback('backup-feedback', `${state.cards.length} Vokabeln wurden als CSV in die Zwischenablage kopiert.`, 'success');
   } catch (err) {
     console.error(err);
-    showFeedback('csv-feedback', "Konnte nicht in die Zwischenablage kopieren.", 'error');
+    showFeedback('backup-feedback', "Konnte nicht in die Zwischenablage kopieren.", 'error');
   }
 }
 
@@ -696,6 +696,74 @@ function clearAllData() {
   saveData(state);
   renderDashboard();
   renderVocab();
+}
+
+async function exportData() {
+  try {
+    const json = JSON.stringify(state, null, 2);
+
+    const blob = new Blob([json], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `espanol-flow-backup-${todayISO()}.json`;
+
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+
+    showFeedback("backup-feedback", "Backup erfolgreich exportiert.", "success");
+  } catch (err) {
+    console.error(err);
+    showFeedback("backup-feedback", "Export fehlgeschlagen.", "error");
+  }
+}
+
+
+async function importData() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,application/json";
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // einfache Validierung
+      if (
+        !data ||
+        !Array.isArray(data.cards) ||
+        typeof data.nextId !== "number"
+      ) {
+        throw new Error("Ungültige Datei");
+      }
+
+      state = data;
+
+      await saveData(state);
+
+      renderDashboard();
+      renderVocab();
+
+      showFeedback("backup-feedback", "Backup erfolgreich importiert.", "success");
+
+    } catch (err) {
+      console.error(err);
+      showFeedback("backup-feedback", "Ungültige Backup-Datei.", "error");
+    }
+  };
+
+  input.click();
 }
 
 // ══════════════════════════════════════════════

@@ -18,7 +18,13 @@
   --shadow-sm: 0 2px 8px rgba(15,25,35,0.10);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* ,
+*::after,
+*::before { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+}
 
 body {
   font-family: 'Inter', sans-serif;
@@ -387,6 +393,17 @@ label {
 .divider {
   border: none; border-top: 1px solid rgba(255,255,255,0.07);
   margin: 20px 0;
+}
+
+.backup-wrapper {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  width: 100%;
+}
+
+.backup-wrapper button {
+  flex: 1;
 }
 
 /* ─── Completion screen ─── */

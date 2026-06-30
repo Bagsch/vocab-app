@@ -218,9 +218,21 @@
 
       <hr class="divider">
 
-      <div class="export-section">
+      <div>
         <button class="btn btn-ghost" style="width: 100%;" onclick="exportVocabs()">Vokabeln exportieren</button>
+      </div>      
+
+      <div class="backup-wrapper">
+        <button class="btn btn-ghost" onclick="exportData()">
+          Backup exportieren
+        </button>
+
+        <button class="btn btn-ghost" onclick="importData()">
+          Backup importieren
+        </button>
+
       </div>
+      <div class="feedback-msg" id="backup-feedback"></div>
 
       <hr class="divider">
 
