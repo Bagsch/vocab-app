@@ -731,36 +731,42 @@ async function importData() {
   input.type = "file";
   input.accept = ".json,application/json";
 
-  input.onchange = async () => {
-    const file = input.files[0];
+  input.onchange = () => {
+    const file = input.files?.[0];
     if (!file) return;
 
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
+    const reader = new FileReader();
 
-      // einfache Validierung
-      if (
-        !data ||
-        !Array.isArray(data.cards) ||
-        typeof data.nextId !== "number"
-      ) {
-        throw new Error("Ungültige Datei");
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+
+        if (
+          !data ||
+          !Array.isArray(data.cards) ||
+          typeof data.nextId !== "number"
+        ) {
+          throw new Error("Ungültige Datei");
+        }
+
+        state = data;
+        await saveData(state);
+
+        renderDashboard();
+        renderVocab();
+
+        showFeedback("backup-feedback", "Backup erfolgreich importiert.", "success");
+      } catch (err) {
+        console.error(err);
+        showFeedback("backup-feedback", "Ungültige Backup-Datei.", "error");
       }
+    };
 
-      state = data;
+    reader.onerror = () => {
+      showFeedback("backup-feedback", "Datei konnte nicht gelesen werden.", "error");
+    };
 
-      await saveData(state);
-
-      renderDashboard();
-      renderVocab();
-
-      showFeedback("backup-feedback", "Backup erfolgreich importiert.", "success");
-
-    } catch (err) {
-      console.error(err);
-      showFeedback("backup-feedback", "Ungültige Backup-Datei.", "error");
-    }
+    reader.readAsText(file);
   };
 
   input.click();
