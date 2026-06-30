@@ -1,26 +1,80 @@
 // ══════════════════════════════════════════════
-//  DATA
+// DATA
 // ══════════════════════════════════════════════
-const STORAGE_KEY = 'espanol_flow_v2';
+
+const DB_NAME = "espanol_flow";
+const DB_VERSION = 1;
+const STORE_NAME = "app";
+
 const DAILY_GOAL = 10;
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    return JSON.parse(raw);
-  } catch { return defaultState(); }
-}
-
 function defaultState() {
-  return { cards: [], streak: 0, lastStudyDate: null, studyDays: [], todayCount: {}, nextId: 1 };
+  return {
+    cards: [],
+    streak: 0,
+    lastStudyDate: null,
+    studyDays: [],
+    todayCount: {},
+    nextId: 1
+  };
 }
 
-function saveData(st) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(st));
+let db;
+
+async function openDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = () => {
+      const db = request.result;
+
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME);
+      }
+    };
+
+    request.onsuccess = () => {
+      db = request.result;
+      resolve(db);
+    };
+
+    request.onerror = () => reject(request.error);
+  });
 }
 
-let state = loadData();
+async function loadData() {
+  return new Promise((resolve) => {
+
+    const tx = db.transaction(STORE_NAME, "readonly");
+    const store = tx.objectStore(STORE_NAME);
+
+    const request = store.get("state");
+
+    request.onsuccess = () => {
+      resolve(request.result || defaultState());
+    };
+
+    request.onerror = () => {
+      resolve(defaultState());
+    };
+  });
+}
+
+async function saveData(state) {
+  return new Promise((resolve, reject) => {
+
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+
+    store.put(state, "state");
+
+    tx.oncomplete = () => resolve();
+
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+let state;
 
 // ══════════════════════════════════════════════
 //  SM-2
@@ -361,7 +415,7 @@ function flipCard() {
   document.getElementById('next-easy').textContent  = intervalLabel(3, card, card.direction);
 }
 
-function rateCard(quality) {
+async function rateCard(quality) {
   const item = sessionQueue[sessionIdx];
   const card = state.cards.find(c => c.id === item.id);
 
@@ -384,7 +438,7 @@ function rateCard(quality) {
     state.studyDays.push(iso);
   }
 
-  saveData(state);
+  await saveData(state);
 
   sessionReviewed++;
   if (quality >= 2) sessionCorrect++;
@@ -540,10 +594,10 @@ function nextReviewStr(card, direction) {
   return 'in ' + days + ' Tagen';
 }
 
-function deleteCard(id) {
+async function deleteCard(id) {
   if (!confirm('Karte löschen?')) return;
   state.cards = state.cards.filter(c => c.id !== id);
-  saveData(state);
+  await saveData(state);
   renderVocab();
   renderDashboard();
 }
@@ -551,12 +605,18 @@ function deleteCard(id) {
 // ══════════════════════════════════════════════
 //  IMPORT
 // ══════════════════════════════════════════════
-function addSingleWord() {
+async function addSingleWord() {
   const es  = document.getElementById('single-es').value.trim();
   const de  = document.getElementById('single-de').value.trim();
   const ctx = document.getElementById('single-ctx').value.trim();
   if (!es || !de) { showFeedback('single-feedback', 'Bitte beide Felder ausfüllen.', 'error'); return; }
-  addCard(es, de, ctx);
+  const isAvailable = addCard(es, de, ctx);
+  if (!isAvailable) {
+    showFeedback('single-feedback', 'Karte existiert bereits.', 'error');
+    return
+  }
+
+  await saveData(state);
   document.getElementById('single-es').value  = '';
   document.getElementById('single-de').value  = '';
   document.getElementById('single-ctx').value = '';
@@ -564,19 +624,31 @@ function addSingleWord() {
   renderDashboard();
 }
 
-function importCSV() {
+async function importCSV() {
   const raw = document.getElementById('csv-input').value.trim();
-  if (!raw) { showFeedback('csv-feedback', 'Bitte CSV-Inhalt einfügen.', 'error'); return; }
+
+  if (!raw) {
+    showFeedback('csv-feedback', 'Bitte CSV-Inhalt einfügen.', 'error');
+    return;
+  }
+
   let count = 0;
-  raw.split('\n').filter(l => l.trim()).forEach(line => {
+
+  const lines = raw.split('\n').filter(l => l.trim());
+
+  for (const line of lines) {
     const parts = line.split(',').map(p => p.trim());
+
     if (parts.length >= 2 && parts[0] && parts[1]) {
-      addCard(parts[0], parts[1], parts[2] || '');
-      count++;
+      const isAvailable = addCard(parts[0], parts[1], parts[2] || '');
+      if (isAvailable) count++;
     }
-  });
+  }
+
+  await saveData(state);
+
   document.getElementById('csv-input').value = '';
-  showFeedback('csv-feedback', count + ' Karte(n) importiert!', 'success');
+  showFeedback('csv-feedback', `${count} Karte(n) importiert!`, 'success');
   renderDashboard();
 }
 
@@ -596,7 +668,7 @@ async function exportVocabs() {
 }
 
 function addCard(es, de, ctx) {
-  if (state.cards.find(c => c.es.toLowerCase() === es.toLowerCase())) return;
+  if (state.cards.find(c => c.es.toLowerCase() === es.toLowerCase())) return false;
 
   state.cards.push({
     id: state.nextId++,
@@ -629,10 +701,10 @@ function addCard(es, de, ctx) {
     added: Date.now()
   });
 
-  saveData(state);
+  return true;
 }
 
-function loadDemoData() {
+async function loadDemoData() {
   const demo = [
     ['hola', 'hallo'],
     ['adiós', 'tschüss / auf Wiedersehen'],
@@ -685,15 +757,21 @@ function loadDemoData() {
     ['pequeño', 'klein'],
     ['bonito', 'schön']
   ];
-  demo.forEach(([es, de, ctx]) => addCard(es, de, ctx));
+
+  for (const [es, de, ctx] of demo) {
+    addCard(es, de, ctx);
+  }
+
+  await saveData(state);
+
   showFeedback('csv-feedback', demo.length + ' Demo-Karten geladen!', 'success');
   renderDashboard();
 }
 
-function clearAllData() {
+async function clearAllData() {
   if (!confirm('Alle Daten löschen? Das kann nicht rückgängig gemacht werden!')) return;
   state = defaultState();
-  saveData(state);
+  await saveData(state);
   renderDashboard();
   renderVocab();
 }
@@ -797,4 +875,8 @@ function showFeedback(id, msg, type) {
 // ══════════════════════════════════════════════
 //  INIT
 // ══════════════════════════════════════════════
-renderDashboard();
+(async function init() {
+  await openDB();
+  state = await loadData();
+  renderDashboard();
+})();
